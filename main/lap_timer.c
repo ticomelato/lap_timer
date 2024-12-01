@@ -202,7 +202,7 @@ void process_nmea_line(const char *line){
                 ptr = comma + 1;
             }
         }
-
+        
         // Status (V = inválido, A = ativo)
         if (strcmp(tokens[2], "A") == 0) {
             // Latitude

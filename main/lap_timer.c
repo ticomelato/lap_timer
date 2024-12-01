@@ -203,8 +203,6 @@ void process_nmea_line(const char *line){
             }
         }
 
-// Viel eu te amo
-
         // Status (V = inválido, A = ativo)
         if (strcmp(tokens[2], "A") == 0) {
             // Latitude

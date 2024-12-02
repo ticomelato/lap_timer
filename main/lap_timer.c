@@ -78,17 +78,17 @@ void process_position(double lat, double lon){
     if (haversine(lat, lon, lat_start, lon_start) < TOLERANCE) {
         if (!lap_state.started) {
             // Inicia o contador
+            printf("\nVolta iniciada!\n");
             lap_state.started = true;
             lap_state.start_time = esp_timer_get_time();
             lap_state.last_checkpoint_time = lap_state.start_time;
-            printf("Volta iniciada!");
 
         } else if (lap_state.checkpoint_1 && lap_state.checkpoint_2) {
             // Finaliza a volta
             int64_t end_time = esp_timer_get_time();
 
             // Tempo do setor 3 (entre o setor 2 e a finalização)
-            print_time("Tempo Setor 3:", lap_state.last_checkpoint_time, end_time);
+            print_time("Tempo Setor 3", lap_state.last_checkpoint_time, end_time);
 
             // Tempo total
             print_time("Volta finalizada! Tempo total", lap_state.start_time, end_time);
@@ -97,29 +97,32 @@ void process_position(double lat, double lon){
             lap_state.started = false;
             lap_state.checkpoint_1 = false;
             lap_state.checkpoint_2 = false;
+            lap_state.start_time = 0;
+            lap_state.last_checkpoint_time = 0;
         }
     }
 
-    // Verifica se passou pelo Setor 1
-    if (!lap_state.checkpoint_1 && haversine(lat, lon, lat_sec1, lon_sec1) < TOLERANCE) {
+    if (lap_state.started){
+        if (!lap_state.checkpoint_1 && haversine(lat, lon, lat_sec1, lon_sec1) < TOLERANCE) {
         int64_t sec1_time = esp_timer_get_time();
 
         // Tempo entre início e setor 1
-        print_time("Tempo Setor 1:", lap_state.start_time, sec1_time);
+        print_time("Tempo Setor 1", lap_state.start_time, sec1_time);
 
         lap_state.checkpoint_1 = true;
         lap_state.last_checkpoint_time = sec1_time; // Atualiza o último checkpoint
     }
 
-    // Verifica se passou pelo Setor 2
-    if (!lap_state.checkpoint_2 && haversine(lat, lon, lat_sec2, lon_sec2) < TOLERANCE) {
-        int64_t sec2_time = esp_timer_get_time();
+        // Verifica se passou pelo Setor 2
+        if (lap_state.checkpoint_1 && !lap_state.checkpoint_2 && haversine(lat, lon, lat_sec2, lon_sec2) < TOLERANCE) {
+            int64_t sec2_time = esp_timer_get_time();
 
-        // Tempo entre setor 1 e setor 2
-        print_time("Tempo Setor 2:", lap_state.last_checkpoint_time, sec2_time);
+            // Tempo entre setor 1 e setor 2
+            print_time("Tempo Setor 2", lap_state.last_checkpoint_time, sec2_time);
 
-        lap_state.checkpoint_2 = true;
-        lap_state.last_checkpoint_time = sec2_time; // Atualiza o último checkpoint
+            lap_state.checkpoint_2 = true;
+            lap_state.last_checkpoint_time = sec2_time; // Atualiza o último checkpoint
+        }
     }
 }
 
@@ -233,6 +236,7 @@ void process_nmea_line(const char *line){
             year += 2000; // Ajustar para ano completo
 
             // Imprime resultados
+            
             /*
             printf("Data (UTC): %02d/%02d/%04d\n", day, month, year);
             printf("Hora (UTC): %02d:%02d:%02d\n", hours, minutes, seconds);

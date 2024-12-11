@@ -8,6 +8,17 @@
 #include "esp_log.h"
 #include "string.h"
 #include "esp_timer.h"
+#include "wifi.h"
+#include "nvs_flash.h"
+
+// Variáveis globais que serão manipuladas e exibidas no portal cativo
+float velocidade = 0.0;
+float volta_rapida = 0.0; // volta mais rapida
+float volta_anterior = 0.0; // volta mais rapida
+float linha_lat = 9.11111, linha_long = 9.222222222; // Ponto da linha de chegada/largada
+float posicao1_lat = 1.111111, posicao1_long = 1.2222222;
+float posicao2_lat = 2.111111, posicao2_long = 2.2222222;
+float posicao3_lat = 3.111111, posicao3_long = 3.2222222;
 
 #define EARTH_RADIUS 6371000.0          // Utilizado para a formula de Haversine
 
@@ -27,6 +38,7 @@ double lon_sec1 = -48.940674;
 // Coordenadas da linha do setor 2
 double lat_sec2 = -26.924355;
 double lon_sec2 = -48.942377;
+
 
 typedef struct {
     bool started;             // Se o contador foi iniciado
@@ -318,5 +330,38 @@ void app_main(void){
 
     init_uart(); //Chama função para inicializar a porta UART
 
+    printf("Inicializando portal cativo...\n");
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    // Iniciar o modo AP e o servidor para o portal cativo
+    start_portal_cativo();
+
     xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL); // Cria a task que lê a porta UART
+
+    while (1) {
+    // Simula alterações nas variáveis
+    velocidade += 0.5;  // Simula alteração de velocidade
+    volta_rapida = 60.0 - velocidade; // Simula uma volta rápida
+    volta_anterior = 60.0 + velocidade; // Simula uma volta rápida
+
+    // Log dos valores de posição com latitude e longitude
+    ESP_LOGI("MAIN", "Velocidade: %.1fkm/h, Volta Rápida: %.2fs, Volta Anterior: %.2fs", 
+            velocidade, volta_rapida, volta_anterior);
+    ESP_LOGI("MAIN", "Linha de Chegada/Saída: Lat %.6f, Long %.6f", 
+            linha_lat, linha_long);
+    ESP_LOGI("MAIN", "Setor 1: Lat %.6f, Long %.6f", 
+            posicao1_lat, posicao1_long);
+    ESP_LOGI("MAIN", "Setor 2: Lat %.6f, Long %.6f", 
+            posicao2_lat, posicao2_long);
+    ESP_LOGI("MAIN", "Setor 3: Lat %.6f, Long %.6f", 
+            posicao3_lat, posicao3_long);
+    // Atraso de 2 segundos
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+    
 };

@@ -79,12 +79,12 @@ esp_err_t get_handler(httpd_req_t *req) {
         "  fetch('/data')"
         "    .then(response => response.json())"
         "    .then(data => {"
-        "      document.getElementById('velocidade').innerText = data.velocidade + ' km/h';"
-        "      document.getElementById('volta_atual').innerText = data.volta_atual + ' s';"
-        "      document.getElementById('volta_anterior').innerText = data.volta_anterior + ' s';"
-        "      document.getElementById('tempo_set1').innerText = data.tempo_set1 + ' s';"
-        "      document.getElementById('tempo_set2').innerText = data.tempo_set2 + ' s';"
-        "      document.getElementById('tempo_set3').innerText = data.tempo_set3 + ' s';"
+        "      document.getElementById('velocidade').innerText = data.velocidade ? data.velocidade + ' km/h' : '0 km/h';"
+        "      document.getElementById('volta_atual').innerText = data.volta_atual || 'Sem Dados';"
+        "      document.getElementById('volta_anterior').innerText = data.volta_anterior || 'Sem Dados';"
+        "      document.getElementById('tempo_set1').innerText = data.tempo_set1 || 'Sem Dados';"
+        "      document.getElementById('tempo_set2').innerText = data.tempo_set2 || 'Sem Dados';"
+        "      document.getElementById('tempo_set3').innerText = data.tempo_set3 || 'Sem Dados';"
         "    });"
         "}"
         "function sendData() {"
@@ -157,7 +157,7 @@ esp_err_t json_handler(httpd_req_t *req) {
 
     
     snprintf(response, sizeof(response),
-             "{\"velocidade\": %.0f, \"volta_atual\": %s, \"volta_anterior\": %s,"
+             "{\"velocidade\": %f,\"volta_atual\": %s, \"volta_anterior\": %s,"
              "\"tempo_set1\": %s, \"tempo_set2\": %s, \"tempo_set3\": %s,"
              "\"lat_start\": %.8f, \"lon_start\": %.8f,"
              "\"pos1_lat\": %.8f, \"pos1_long\": %.8f,"

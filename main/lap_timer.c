@@ -373,27 +373,17 @@ void app_main(void){
 
     xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL); // Cria a task que lê a porta UART
 
-    /*
+    
     while (1) {
     // Simula alterações nas variáveis
-    volta_atual = 60.0 - velocidade; // Simula uma volta rápida
-    volta_anterior = 60.0 + velocidade; // Simula uma volta rápida
+    velocidade += 1;
 
     // Log dos valores de posição com latitude e longitude
     
-    ESP_LOGI("MAIN", "Velocidade: %.1fkm/h, Volta Rápida: %.2fs, Volta Anterior: %.2fs", 
-            velocidade, volta_atual, volta_anterior);
-    ESP_LOGI("MAIN", "Setores: %.1f, %.1f, %.1f",
-            tempo_set1, tempo_set2, tempo_set3);
-    ESP_LOGI("MAIN", "Linha de Chegada/Saída: Lat %.6f, Long %.6f", 
-            linha_lat, linha_long);
-    ESP_LOGI("MAIN", "Setor 1: Lat %.6f, Long %.6f", 
-            posicao1_lat, posicao1_long);
-    ESP_LOGI("MAIN", "Setor 2: Lat %.6f, Long %.6f", 
-            posicao2_lat, posicao2_long);
+    ESP_LOGI("MAIN", "Velocidade: %.1fkm/h", 
+            velocidade);
     // Atraso de 2 segundos
     vTaskDelay(pdMS_TO_TICKS(2000));
     }
-    */
     
 };

@@ -73,16 +73,6 @@ double haversine(double lat1, double lon1, double lat2, double lon2){
     return EARTH_RADIUS * c;
 }
 
-// Função para facilitar os prints de tempo
-void print_time(const char *label, int64_t start_time, int64_t end_time){
-    int64_t elapsed_time_ms = (end_time - start_time) / 1000; // Tempo em milissegundos
-    int minutes = elapsed_time_ms / (60 * 1000);             // Minutos
-    int seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
-    int milliseconds = elapsed_time_ms % 1000;              // Milissegundos
-
-    printf("%s: %02d:%02d:%03d (min:seg:ms)\n", label, minutes, seconds, milliseconds);
-}
-
 // Compara a localização atual com os checkpoints para encontrar os tempos
 void process_position(double lat, double lon){
     // Verifica se está próximo à linha de chegada
@@ -91,18 +81,18 @@ void process_position(double lat, double lon){
     int seconds = 0;                    // Segundos
     int milliseconds = 0;               // Milissegundos
 
-    lap_state.live_time = esp_timer_get_time();
-    elapsed_time_ms = (lap_state.live_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
-    minutes = elapsed_time_ms / (60 * 1000);             // Minutos
-    seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
-    milliseconds = elapsed_time_ms % 1000;              // Milissegundos
-    sprintf(volta_atual, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
-
+    if(lap_state.started){
+        lap_state.live_time = esp_timer_get_time();
+        elapsed_time_ms = (lap_state.live_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
+        minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+        seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+        milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+        sprintf(volta_atual, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
+    }
 
     if (haversine(lat, lon, lat_start, lon_start) < TOLERANCE) {
         if (!lap_state.started) {
             // Inicia o contador
-            printf("\nVolta iniciada!\n");
             lap_state.started = true;
             lap_state.start_time = esp_timer_get_time();
             lap_state.last_checkpoint_time = lap_state.start_time;
@@ -154,7 +144,6 @@ void process_position(double lat, double lon){
             int64_t sec2_time = esp_timer_get_time();
 
             // Tempo entre setor 1 e setor 2
-            print_time("Tempo Setor 2", lap_state.last_checkpoint_time, sec2_time);
             elapsed_time_ms = (sec2_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
             minutes = elapsed_time_ms / (60 * 1000);             // Minutos
             seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
@@ -373,7 +362,7 @@ void app_main(void){
 
     xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL); // Cria a task que lê a porta UART
 
-    
+    /*
     while (1) {
     // Simula alterações nas variáveis
     velocidade += 1;
@@ -384,6 +373,6 @@ void app_main(void){
             velocidade);
     // Atraso de 2 segundos
     vTaskDelay(pdMS_TO_TICKS(2000));
-    }
+    */
     
 };

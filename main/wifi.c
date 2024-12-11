@@ -152,21 +152,34 @@ esp_err_t get_handler(httpd_req_t *req) {
 esp_err_t json_handler(httpd_req_t *req) {
     char response[1024];
 
-    ESP_LOGI(TAG, "Enviando dados JSON: velocidade=%.0f, volta_atual=%s, volta_anterior=%s", 
-             velocidade, volta_atual, volta_anterior);
+    //ESP_LOGI(TAG, "Enviando dados JSON: velocidade=%.0f, volta_atual=%s, volta_anterior=%s", velocidade, volta_atual, volta_anterior);
 
     
     snprintf(response, sizeof(response),
-             "{\"velocidade\": %f,\"volta_atual\": %s, \"volta_anterior\": %s,"
-             "\"tempo_set1\": %s, \"tempo_set2\": %s, \"tempo_set3\": %s,"
-             "\"lat_start\": %.8f, \"lon_start\": %.8f,"
-             "\"pos1_lat\": %.8f, \"pos1_long\": %.8f,"
-             "\"pos2_lat\": %.8f, \"pos2_long\": %.8f}",
-             velocidade, volta_atual, volta_anterior,
-             tempo_set1, tempo_set2, tempo_set3,
-             lat_start, lon_start,
-             lat_sec1, lon_sec1,
-             lat_sec2, lon_sec2);
+                "{\"velocidade\": %.1f, \"volta_atual\": \"%s\", \"volta_anterior\": \"%s\","
+                "\"tempo_set1\": \"%s\", \"tempo_set2\": \"%s\", \"tempo_set3\": \"%s\","
+                "\"lat_start\": %.8f, \"lon_start\": %.8f,"
+                "\"pos1_lat\": %.8f, \"pos1_long\": %.8f,"
+                "\"pos2_lat\": %.8f, \"pos2_long\": %.8f}",
+                velocidade, volta_atual, volta_anterior,
+                tempo_set1, tempo_set2, tempo_set3,
+                lat_start, lon_start,
+                lat_sec1, lon_sec1,
+                lat_sec2, lon_sec2);
+
+/*
+    snprintf(response, sizeof(response),
+            "{\"velocidade\": %.1f, \"volta_atual\": %s, \"volta_anterior\": %s,"
+            "\"tempo_set1\": %s, \"tempo_set2\": %s, \"tempo_set3\": %s,"
+            "\"lat_start\": %.8f, \"lon_start\": %.8f,"
+            "\"pos1_lat\": %.8f, \"pos1_long\": %.8f,"
+            "\"pos2_lat\": %.8f, \"pos2_long\": %.8f}",
+            velocidade, volta_atual, volta_anterior,
+            tempo_set1, tempo_set2, tempo_set3,
+            lat_start, lon_start,
+            lat_sec1, lon_sec1,
+            lat_sec2, lon_sec2);
+*/
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);

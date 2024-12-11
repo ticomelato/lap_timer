@@ -15,6 +15,9 @@
 float velocidade = 0.0;
 float volta_rapida = 0.0; // volta mais rapida
 float volta_anterior = 0.0; // volta mais rapida
+float tempo_set1 = 0.0;
+float tempo_set2 = 0.0;
+float tempo_set3 = 0.0;
 float linha_lat = 9.11111, linha_long = 9.222222222; // Ponto da linha de chegada/largada
 float posicao1_lat = 1.111111, posicao1_long = 1.2222222;
 float posicao2_lat = 2.111111, posicao2_long = 2.2222222;

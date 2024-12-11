@@ -25,6 +25,7 @@ static const char *TAG = "PORTAL_CATIVO";
 
 // Variáveis globais acessadas de main.c
 extern float velocidade, volta_rapida, volta_anterior;
+extern float tempo_set1,  tempo_set2,  tempo_set3;
 
 extern float linha_lat, linha_long;
 extern float posicao1_lat, posicao1_long;
@@ -82,14 +83,9 @@ esp_err_t get_handler(httpd_req_t *req) {
         "      document.getElementById('velocidade').innerText = data.velocidade + ' km/h';"
         "      document.getElementById('volta_rapida').innerText = data.volta_rapida + ' s';"
         "      document.getElementById('volta_anterior').innerText = data.volta_anterior + ' s';"
-        "      document.getElementById('linha_lat_display').innerText = data.linha_lat || '0';"
-        "      document.getElementById('linha_long_display').innerText = data.linha_long || '0';"
-        "      document.getElementById('pos1_lat_display').innerText = data.pos1_lat || '0';"
-        "      document.getElementById('pos1_long_display').innerText = data.pos1_long || '0';"
-        "      document.getElementById('pos2_lat_display').innerText = data.pos2_lat || '0';"
-        "      document.getElementById('pos2_long_display').innerText = data.pos2_long || '0';"
-        "      document.getElementById('pos3_lat_display').innerText = data.pos3_lat || '0';"
-        "      document.getElementById('pos3_long_display').innerText = data.pos3_long || '0';"
+        "      document.getElementById('tempo_set1').innerText = data.tempo_set1 + ' s';"
+        "      document.getElementById('tempo_set2').innerText = data.tempo_set2 + ' s';"
+        "      document.getElementById('tempo_set3').innerText = data.tempo_set3 + ' s';"
         "    });"
         "}"
         "function sendData() {"
@@ -122,22 +118,14 @@ esp_err_t get_handler(httpd_req_t *req) {
         "<div class=\"container\">"
         "<div class=\"box\">"
         "<h2>Informações</h2>"
+        //Aqui
         "<p>Velocidade: <span id=\"velocidade\"></span></p>"
         "<p>Volta Rápida: <span id=\"volta_rapida\"></span></p>"
+        "<h2>Volta Anterior</h2>"
         "<p>Volta Anterior: <span id=\"volta_anterior\"></span></p>"
-        "<h2>Posições Atuais</h2>"
-        "<h3>Linha de Chegada/Saída</h3>"
-        "<p>Latitude: <span id=\"linha_lat_display\"></span></p>"
-        "<p>Longitude: <span id=\"linha_long_display\"></span></p>"
-        "<h3>Setor 1</h3>"
-        "<p>Latitude: <span id=\"pos1_lat_display\"></span></p>"
-        "<p>Longitude: <span id=\"pos1_long_display\"></span></p>"
-        "<h3>Setor 2</h3>"
-        "<p>Latitude: <span id=\"pos2_lat_display\"></span></p>"
-        "<p>Longitude: <span id=\"pos2_long_display\"></span></p>"
-        "<h3>Setor 3</h3>"
-        "<p>Latitude: <span id=\"pos3_lat_display\"></span></p>"
-        "<p>Longitude: <span id=\"pos3_long_display\"></span></p>"
+        "<p>Setor 1: <span id=\"tempo_set1\"></span></p>"
+        "<p>Setor 2: <span id=\"tempo_set2\"></span></p>"
+        "<p>Setor 3: <span id=\"tempo_set3\"></span></p>"        
         "</div>"
         "<div class=\"box\">"
         "<h2>Atualizar Posições</h2>"
@@ -172,11 +160,13 @@ esp_err_t json_handler(httpd_req_t *req) {
     char response[1024];
     snprintf(response, sizeof(response),
              "{\"velocidade\": %.1f, \"volta_rapida\": %.2f, \"volta_anterior\": %.2f,"
+             "{\"tempo_set1\": %.1f, \"tempo_set2\": %.2f, \"tempo_set3\": %.2f,"
              "\"linha_lat\": %.6f, \"linha_long\": %.6f,"
              "\"pos1_lat\": %.6f, \"pos1_long\": %.6f,"
              "\"pos2_lat\": %.6f, \"pos2_long\": %.6f,"
              "\"pos3_lat\": %.6f, \"pos3_long\": %.6f}",
              velocidade, volta_rapida, volta_anterior,
+             tempo_set1, tempo_set2, tempo_set3,
              linha_lat, linha_long,
              posicao1_lat, posicao1_long,
              posicao2_lat, posicao2_long,

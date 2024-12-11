@@ -11,18 +11,6 @@
 #include "wifi.h"
 #include "nvs_flash.h"
 
-// Variáveis globais que serão manipuladas e exibidas no portal cativo
-float velocidade = 0.0;
-float volta_rapida = 0.0; // volta mais rapida
-float volta_anterior = 0.0; // volta mais rapida
-float tempo_set1 = 0.0;
-float tempo_set2 = 0.0;
-float tempo_set3 = 0.0;
-float linha_lat = 9.11111, linha_long = 9.222222222; // Ponto da linha de chegada/largada
-float posicao1_lat = 1.111111, posicao1_long = 1.2222222;
-float posicao2_lat = 2.111111, posicao2_long = 2.2222222;
-float posicao3_lat = 3.111111, posicao3_long = 3.2222222;
-
 #define EARTH_RADIUS 6371000.0          // Utilizado para a formula de Haversine
 
 #define TOLERANCE 10.0                  // Tolerância em metros para computar a passagem por um checkpoint
@@ -42,13 +30,20 @@ double lon_sec1 = -48.940674;
 double lat_sec2 = -26.924355;
 double lon_sec2 = -48.942377;
 
+float velocidade = 0.0;
+char volta_atual[20] = "Sem Dados ";    // Volta sendo observada
+char volta_anterior[20] = "Sem Dados "; // Volta anterior
+char tempo_set1[20] = "Sem Dados ";
+char tempo_set2[20] = "Sem Dados ";
+char tempo_set3[20] = "Sem Dados ";
 
 typedef struct {
-    bool started;             // Se o contador foi iniciado
-    bool checkpoint_1;        // Se passou pelo ponto Y
-    bool checkpoint_2;        // Se passou pelo ponto Z
-    int64_t start_time;       // Tempo de início em microssegundos
-    int64_t last_checkpoint_time; // Tempo do último checkpoint
+    bool started;                   // Se o contador foi iniciado
+    bool checkpoint_1;              // Se passou pelo ponto Y
+    bool checkpoint_2;              // Se passou pelo ponto Z
+    int64_t start_time;             // Tempo de início em microssegundos
+    int64_t last_checkpoint_time;   // Tempo do último checkpoint
+    int64_t live_time;              // Tempo ao vivo
 } LapState;
 
 // Inicialização da struct
@@ -57,7 +52,8 @@ LapState lap_state = {
     .checkpoint_1 = false, 
     .checkpoint_2 = false, 
     .start_time = 0,
-    .last_checkpoint_time = 0
+    .last_checkpoint_time = 0,
+    .live_time = 0
 };
 
 // Função utilizada para calcular a distancia entre duas coordenadas em metros
@@ -90,6 +86,19 @@ void print_time(const char *label, int64_t start_time, int64_t end_time){
 // Compara a localização atual com os checkpoints para encontrar os tempos
 void process_position(double lat, double lon){
     // Verifica se está próximo à linha de chegada
+    int64_t elapsed_time_ms = 0;        // Tempo em milissegundos
+    int minutes = 0;                    // Minutos
+    int seconds = 0;                    // Segundos
+    int milliseconds = 0;               // Milissegundos
+
+    lap_state.live_time = esp_timer_get_time();
+    elapsed_time_ms = (lap_state.live_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
+    minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+    seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+    milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+    sprintf(volta_atual, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
+
+
     if (haversine(lat, lon, lat_start, lon_start) < TOLERANCE) {
         if (!lap_state.started) {
             // Inicia o contador
@@ -103,10 +112,18 @@ void process_position(double lat, double lon){
             int64_t end_time = esp_timer_get_time();
 
             // Tempo do setor 3 (entre o setor 2 e a finalização)
-            print_time("Tempo Setor 3", lap_state.last_checkpoint_time, end_time);
+            elapsed_time_ms = (end_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
+            minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+            seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+            milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+            sprintf(tempo_set3, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
 
             // Tempo total
-            print_time("Volta finalizada! Tempo total", lap_state.start_time, end_time);
+            elapsed_time_ms = (end_time - lap_state.start_time) / 1000; // Tempo em milissegundos
+            minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+            seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+            milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+            sprintf(volta_anterior, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
 
             // Reseta o estado
             lap_state.started = false;
@@ -122,7 +139,11 @@ void process_position(double lat, double lon){
         int64_t sec1_time = esp_timer_get_time();
 
         // Tempo entre início e setor 1
-        print_time("Tempo Setor 1", lap_state.start_time, sec1_time);
+        elapsed_time_ms = (sec1_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
+        minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+        seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+        milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+        sprintf(tempo_set1, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
 
         lap_state.checkpoint_1 = true;
         lap_state.last_checkpoint_time = sec1_time; // Atualiza o último checkpoint
@@ -134,6 +155,12 @@ void process_position(double lat, double lon){
 
             // Tempo entre setor 1 e setor 2
             print_time("Tempo Setor 2", lap_state.last_checkpoint_time, sec2_time);
+            elapsed_time_ms = (sec2_time - lap_state.last_checkpoint_time) / 1000; // Tempo em milissegundos
+            minutes = elapsed_time_ms / (60 * 1000);             // Minutos
+            seconds = (elapsed_time_ms % (60 * 1000)) / 1000;    // Segundos
+            milliseconds = elapsed_time_ms % 1000;              // Milissegundos
+            sprintf(tempo_set2, "%2d:%2d,%3d", minutes, seconds, milliseconds); // Salva os tempos em um char
+            
 
             lap_state.checkpoint_2 = true;
             lap_state.last_checkpoint_time = sec2_time; // Atualiza o último checkpoint
@@ -233,7 +260,7 @@ void process_nmea_line(const char *line){
             double speed_knots = atof(tokens[7]);
 
             // Converte a velocidade para km/h
-            double speed_kmh = speed_knots * 1.852;
+            velocidade = speed_knots * 1.852;
 
             // Extração de horário UTC (hhmmss.ss)
             char utc_time[16];
@@ -346,25 +373,27 @@ void app_main(void){
 
     xTaskCreate(rx_task, "uart_rx_task", 4096, NULL, configMAX_PRIORITIES - 1, NULL); // Cria a task que lê a porta UART
 
+    /*
     while (1) {
     // Simula alterações nas variáveis
-    velocidade += 0.5;  // Simula alteração de velocidade
-    volta_rapida = 60.0 - velocidade; // Simula uma volta rápida
+    volta_atual = 60.0 - velocidade; // Simula uma volta rápida
     volta_anterior = 60.0 + velocidade; // Simula uma volta rápida
 
     // Log dos valores de posição com latitude e longitude
+    
     ESP_LOGI("MAIN", "Velocidade: %.1fkm/h, Volta Rápida: %.2fs, Volta Anterior: %.2fs", 
-            velocidade, volta_rapida, volta_anterior);
+            velocidade, volta_atual, volta_anterior);
+    ESP_LOGI("MAIN", "Setores: %.1f, %.1f, %.1f",
+            tempo_set1, tempo_set2, tempo_set3);
     ESP_LOGI("MAIN", "Linha de Chegada/Saída: Lat %.6f, Long %.6f", 
             linha_lat, linha_long);
     ESP_LOGI("MAIN", "Setor 1: Lat %.6f, Long %.6f", 
             posicao1_lat, posicao1_long);
     ESP_LOGI("MAIN", "Setor 2: Lat %.6f, Long %.6f", 
             posicao2_lat, posicao2_long);
-    ESP_LOGI("MAIN", "Setor 3: Lat %.6f, Long %.6f", 
-            posicao3_lat, posicao3_long);
     // Atraso de 2 segundos
     vTaskDelay(pdMS_TO_TICKS(2000));
     }
+    */
     
 };

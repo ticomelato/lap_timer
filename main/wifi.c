@@ -24,13 +24,12 @@
 static const char *TAG = "PORTAL_CATIVO";
 
 // Variáveis globais acessadas de main.c
-extern float velocidade, volta_rapida, volta_anterior;
-extern float tempo_set1,  tempo_set2,  tempo_set3;
+extern float velocidade;
+extern char tempo_set1[20],  tempo_set2[20],  tempo_set3[20], volta_atual[20], volta_anterior[20];
 
-extern float linha_lat, linha_long;
-extern float posicao1_lat, posicao1_long;
-extern float posicao2_lat, posicao2_long;
-extern float posicao3_lat, posicao3_long;
+extern float lat_start, lon_start;
+extern float lat_sec1, lon_sec1;
+extern float lat_sec2, lon_sec2;
 
 
 // Tarefa do servidor DNS para redirecionar consultas
@@ -81,7 +80,7 @@ esp_err_t get_handler(httpd_req_t *req) {
         "    .then(response => response.json())"
         "    .then(data => {"
         "      document.getElementById('velocidade').innerText = data.velocidade + ' km/h';"
-        "      document.getElementById('volta_rapida').innerText = data.volta_rapida + ' s';"
+        "      document.getElementById('volta_atual').innerText = data.volta_atual + ' s';"
         "      document.getElementById('volta_anterior').innerText = data.volta_anterior + ' s';"
         "      document.getElementById('tempo_set1').innerText = data.tempo_set1 + ' s';"
         "      document.getElementById('tempo_set2').innerText = data.tempo_set2 + ' s';"
@@ -89,22 +88,19 @@ esp_err_t get_handler(httpd_req_t *req) {
         "    });"
         "}"
         "function sendData() {"
-        "  const linha_lat = document.getElementById('linha_lat').value || '0';"
-        "  const linha_long = document.getElementById('linha_long').value || '0';"
+        "  const lat_start = document.getElementById('lat_start').value || '0';"
+        "  const lon_start = document.getElementById('lon_start').value || '0';"
         "  const pos1_lat = document.getElementById('pos1_lat').value || '0';"
         "  const pos1_long = document.getElementById('pos1_long').value || '0';"
         "  const pos2_lat = document.getElementById('pos2_lat').value || '0';"
         "  const pos2_long = document.getElementById('pos2_long').value || '0';"
-        "  const pos3_lat = document.getElementById('pos3_lat').value || '0';"
-        "  const pos3_long = document.getElementById('pos3_long').value || '0';"
         "  fetch('/submit', {"
         "    method: 'POST',"
         "    headers: { 'Content-Type': 'application/json' },"
         "    body: JSON.stringify({"
-        "      linha_lat, linha_long,"
+        "      lat_start, lon_start,"
         "      pos1_lat, pos1_long,"
         "      pos2_lat, pos2_long,"
-        "      pos3_lat, pos3_long"
         "    })"
         "  }).then(response => response.text())"
         "    .then(data => alert('Posições salvas com sucesso!'))"
@@ -120,7 +116,7 @@ esp_err_t get_handler(httpd_req_t *req) {
         "<h2>Informações</h2>"
         //Aqui
         "<p>Velocidade: <span id=\"velocidade\"></span></p>"
-        "<p>Volta Rápida: <span id=\"volta_rapida\"></span></p>"
+        "<p>Volta Atual: <span id=\"volta_atual\"></span></p>"
         "<h2>Volta Anterior</h2>"
         "<p>Volta Anterior: <span id=\"volta_anterior\"></span></p>"
         "<p>Setor 1: <span id=\"tempo_set1\"></span></p>"
@@ -130,17 +126,14 @@ esp_err_t get_handler(httpd_req_t *req) {
         "<div class=\"box\">"
         "<h2>Atualizar Posições</h2>"
         "<h3>Linha de Chegada/Saída</h3>"
-        "<input id=\"linha_lat\" type=\"text\" placeholder=\"Latitude Linha\" />"
-        "<input id=\"linha_long\" type=\"text\" placeholder=\"Longitude Linha\" />"
+        "<input id=\"lat_start\" type=\"text\" placeholder=\"Latitude Linha\" />"
+        "<input id=\"lon_start\" type=\"text\" placeholder=\"Longitude Linha\" />"
         "<h3>Setor 1</h3>"
         "<input id=\"pos1_lat\" type=\"text\" placeholder=\"Latitude Setor 1\" />"
         "<input id=\"pos1_long\" type=\"text\" placeholder=\"Longitude Setor 1\" />"
         "<h3>Setor 2</h3>"
         "<input id=\"pos2_lat\" type=\"text\" placeholder=\"Latitude Setor 2\" />"
         "<input id=\"pos2_long\" type=\"text\" placeholder=\"Longitude Setor 2\" />"
-        "<h3>Setor 3</h3>"
-        "<input id=\"pos3_lat\" type=\"text\" placeholder=\"Latitude Setor 3\" />"
-        "<input id=\"pos3_long\" type=\"text\" placeholder=\"Longitude Setor 3\" />"
         "<br><br>"
         "<button onclick=\"sendData()\">Atualizar</button>"
         "</div>"
@@ -158,19 +151,22 @@ esp_err_t get_handler(httpd_req_t *req) {
 // Manipulador para retornar dados JSON
 esp_err_t json_handler(httpd_req_t *req) {
     char response[1024];
+
+    ESP_LOGI(TAG, "Enviando dados JSON: velocidade=%.0f, volta_atual=%s, volta_anterior=%s", 
+             velocidade, volta_atual, volta_anterior);
+
+    
     snprintf(response, sizeof(response),
-             "{\"velocidade\": %.1f, \"volta_rapida\": %.2f, \"volta_anterior\": %.2f,"
-             "{\"tempo_set1\": %.1f, \"tempo_set2\": %.2f, \"tempo_set3\": %.2f,"
-             "\"linha_lat\": %.6f, \"linha_long\": %.6f,"
-             "\"pos1_lat\": %.6f, \"pos1_long\": %.6f,"
-             "\"pos2_lat\": %.6f, \"pos2_long\": %.6f,"
-             "\"pos3_lat\": %.6f, \"pos3_long\": %.6f}",
-             velocidade, volta_rapida, volta_anterior,
+             "{\"velocidade\": %.0f, \"volta_atual\": %s, \"volta_anterior\": %s,"
+             "\"tempo_set1\": %s, \"tempo_set2\": %s, \"tempo_set3\": %s,"
+             "\"lat_start\": %.8f, \"lon_start\": %.8f,"
+             "\"pos1_lat\": %.8f, \"pos1_long\": %.8f,"
+             "\"pos2_lat\": %.8f, \"pos2_long\": %.8f}",
+             velocidade, volta_atual, volta_anterior,
              tempo_set1, tempo_set2, tempo_set3,
-             linha_lat, linha_long,
-             posicao1_lat, posicao1_long,
-             posicao2_lat, posicao2_long,
-             posicao3_lat, posicao3_long);
+             lat_start, lon_start,
+             lat_sec1, lon_sec1,
+             lat_sec2, lon_sec2);
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
@@ -207,41 +203,31 @@ esp_err_t post_handler(httpd_req_t *req) {
         cJSON *pos1_long = cJSON_GetObjectItem(root, "pos1_long");
         cJSON *pos2_lat = cJSON_GetObjectItem(root, "pos2_lat");
         cJSON *pos2_long = cJSON_GetObjectItem(root, "pos2_long");
-        cJSON *pos3_lat = cJSON_GetObjectItem(root, "pos3_lat");
-        cJSON *pos3_long = cJSON_GetObjectItem(root, "pos3_long");
 
         // Converta e atualize apenas se os valores forem strings válidas ou números
         if (lin_lat && cJSON_IsString(lin_lat) && strlen(lin_lat->valuestring) > 0) {
-            linha_lat = atof(lin_lat->valuestring);
-            ESP_LOGI(TAG, "Linha Latitude atualizado: %.6f", linha_lat);
+            lat_start = atof(lin_lat->valuestring);
+            ESP_LOGI(TAG, "Linha Latitude atualizado: %.6f", lat_start);
         }
         if (lin_long && cJSON_IsString(lin_long) && strlen(lin_long->valuestring) > 0) {
-            linha_long = atof(lin_long->valuestring);
-            ESP_LOGI(TAG, "Linha Longitude atualizado: %.6f", linha_long);
+            lon_start = atof(lin_long->valuestring);
+            ESP_LOGI(TAG, "Linha Longitude atualizado: %.6f", lon_start);
         }
         if (pos1_lat && cJSON_IsString(pos1_lat) && strlen(pos1_lat->valuestring) > 0) {
-            posicao1_lat = atof(pos1_lat->valuestring);
-            ESP_LOGI(TAG, "Setor 1 Latitude atualizado: %.6f", posicao1_lat);
+            lat_sec1 = atof(pos1_lat->valuestring);
+            ESP_LOGI(TAG, "Setor 1 Latitude atualizado: %.6f", lat_sec1);
         }
         if (pos1_long && cJSON_IsString(pos1_long) && strlen(pos1_long->valuestring) > 0) {
-            posicao1_long = atof(pos1_long->valuestring);
-            ESP_LOGI(TAG, "Setor 1 Longitude atualizado: %.6f", posicao1_long);
+            lon_sec1 = atof(pos1_long->valuestring);
+            ESP_LOGI(TAG, "Setor 1 Longitude atualizado: %.6f", lon_sec1);
         }
         if (pos2_lat && cJSON_IsString(pos2_lat) && strlen(pos2_lat->valuestring) > 0) {
-            posicao2_lat = atof(pos2_lat->valuestring);
-            ESP_LOGI(TAG, "Setor 2 Latitude atualizado: %.6f", posicao2_lat);
+            lat_sec2 = atof(pos2_lat->valuestring);
+            ESP_LOGI(TAG, "Setor 2 Latitude atualizado: %.6f", lat_sec2);
         }
         if (pos2_long && cJSON_IsString(pos2_long) && strlen(pos2_long->valuestring) > 0) {
-            posicao2_long = atof(pos2_long->valuestring);
-            ESP_LOGI(TAG, "Setor 2 Longitude atualizado: %.6f", posicao2_long);
-        }
-        if (pos3_lat && cJSON_IsString(pos3_lat) && strlen(pos3_lat->valuestring) > 0) {
-            posicao3_lat = atof(pos3_lat->valuestring);
-            ESP_LOGI(TAG, "Setor 3 Latitude atualizado: %.6f", posicao3_lat);
-        }
-        if (pos3_long && cJSON_IsString(pos3_long) && strlen(pos3_long->valuestring) > 0) {
-            posicao3_long = atof(pos3_long->valuestring);
-            ESP_LOGI(TAG, "Setor 3 Longitude atualizado: %.6f", posicao3_long);
+            lon_sec2 = atof(pos2_long->valuestring);
+            ESP_LOGI(TAG, "Setor 2 Longitude atualizado: %.6f", lon_sec2);
         }
 
         cJSON_Delete(root);
